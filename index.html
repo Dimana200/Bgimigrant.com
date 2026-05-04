@@ -345,9 +345,7 @@ body{font-family:Georgia,serif;background:#f8f4ed;color:#1c2535;overflow-x:hidde
 }
 .cat-работа{color:#0077b6;}
 
-/* REVEAL ANIMATION */
-.reveal{opacity:0;transform:translateY(24px);transition:opacity .6s,transform .6s;}
-.reveal.visible{opacity:1;transform:translateY(0);}
+/* Reveal disabled for mobile compatibility */
 /* COOKIE */
 .cookie-bar{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#0c0f1a;border-top:2px solid #f0a800;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 -8px 30px rgba(0,0,0,.5);}
 .cookie-bar p{color:#8a9fb8;font-size:12px;font-family:Verdana,sans-serif;flex:1;min-width:200px;line-height:1.5;}
@@ -488,7 +486,7 @@ body{font-family:Georgia,serif;background:#f8f4ed;color:#1c2535;overflow-x:hidde
 </section>
 
 <!-- COUNTRIES -->
-<section class="countries-section reveal">
+<section class="countries-section">
   <div style="max-width:1300px;margin:0 auto;">
     <div class="section-label">Намери по страна</div>
     <h2 class="section-title">Bulgarian общности по света</h2>
@@ -559,7 +557,7 @@ body{font-family:Georgia,serif;background:#f8f4ed;color:#1c2535;overflow-x:hidde
 </section>
 
 <!-- CATEGORIES -->
-<section class="cats-section reveal">
+<section class="cats-section">
   <div style="max-width:1300px;margin:0 auto;">
     <div class="section-label">Филтрирай по категория</div>
     <div class="cats-grid">
@@ -641,15 +639,6 @@ body{font-family:Georgia,serif;background:#f8f4ed;color:#1c2535;overflow-x:hidde
 <!-- SPONSORED BANNERS -->
 <div class="sponsored-wrap" id="sponsored-wrap"></div>
 
-<!-- ADSENSE -->
-<div style="max-width:1300px;margin:0 auto;padding:0 20px;">
-  <div class="ad-wrap">
-    <div class="ad-label">РЕКЛАМА</div>
-    <!-- Google AdSense: замени след получаване на акаунт -->
-    <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXX" crossorigin="anonymous"></script> -->
-    <!-- <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXX" data-ad-slot="XXXXXXXXX" data-ad-format="auto"></ins> -->
-    <div class="ad-placeholder">📢 Google AdSense реклама (активирай след одобрение на акаунт)</div>
-  </div>
 </div>
 
 <!-- SPONSORED BANNERS -->
@@ -658,12 +647,6 @@ body{font-family:Georgia,serif;background:#f8f4ed;color:#1c2535;overflow-x:hidde
 <!-- SPONSORED BANNERS -->
 <div class="sponsored-wrap" id="sponsored-wrap"></div>
 
-<!-- ADSENSE -->
-<div style="max-width:1300px;margin:0 auto;padding:0 20px;">
-  <div class="ad-wrap">
-    <div class="ad-label">РЕКЛАМА</div>
-    <div class="ad-placeholder">📢 Google AdSense — активирай след одобрение от google.com/adsense</div>
-  </div>
 </div>
 
 <section class="listings-section">
@@ -689,7 +672,7 @@ body{font-family:Georgia,serif;background:#f8f4ed;color:#1c2535;overflow-x:hidde
 </section>
 
 <!-- PRICING -->
-<section class="pricing-section reveal">
+<section class="pricing-section">
   <div style="max-width:1300px;margin:0 auto;text-align:center;">
     <div class="section-label">Избери план</div>
     <h2 class="section-title" style="color:#fff;">Публикувай твоя Бизнес</h2>
@@ -982,9 +965,7 @@ async function init() {
     document.getElementById('hdr').classList.toggle('scrolled', window.scrollY > 50);
   });
 
-  // Reveal on scroll
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('visible'); });
+  
   }, { threshold: 0.1 });
   document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
 
@@ -1029,7 +1010,7 @@ function updateHeader() {
 
 // ── LOAD ────────────────────────────────────────
 async function loadListings() {
-  document.getElementById('listings-wrap').innerHTML = '<div class="state-box"><div class="loader-ring"></div><p>Зареждане...</p></div>';
+  document.getElementById('listings-wrap').innerHTML = '<div class="state-box"><div class="loader-ring"></div><p>Зареждане на обявите...</p></div>';
   updateSEO();
 
   var q = sb.from('listings').select('*').eq('approved', true)
@@ -1042,6 +1023,10 @@ async function loadListings() {
   if (searchTerm) q = q.ilike('title', '%' + searchTerm + '%');
 
   var res = await q;
+  if (res.error) {
+    document.getElementById('listings-wrap').innerHTML = '<div class="state-box"><h3>Грешка при зареждане</h3><p style="font-family:Verdana;font-size:13px;color:#e74c3c;">' + res.error.message + '</p></div>';
+    return;
+  }
   listings = res.data || [];
 
   document.getElementById('listings-count').textContent = listings.length + ' обяви';
@@ -1326,18 +1311,12 @@ function cookieInit() {
 function cookieAccept() {
   localStorage.setItem('cookie_ok', 'all');
   document.getElementById('cookie-bar').style.display = 'none';
-  loadAdsense();
 }
 function cookieReject() {
   localStorage.setItem('cookie_ok', 'min');
   document.getElementById('cookie-bar').style.display = 'none';
 }
-function loadAdsense() {
-  // Uncomment after AdSense approval:
-  // var s = document.createElement('script');
-  // s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXX';
-  // s.async = true; document.head.appendChild(s);
-}
+
 
 // ── SPONSORED BANNERS ───────────────────────────
 async function loadSponsoredBanners() {
