@@ -1013,27 +1013,38 @@ async function loadListings() {
   document.getElementById('listings-wrap').innerHTML = '<div class="state-box"><div class="loader-ring"></div><p>Зареждане на обявите...</p></div>';
   updateSEO();
 
-  var q = sb.from('listings').select('*').eq('approved', true)
-    .order('featured', {ascending: false})
-    .order('created_at', {ascending: false})
-    .limit(100);
+  try {
+    var params = new URLSearchParams();
+    params.set('approved', 'eq.true');
+    params.set('order', 'featured.desc,created_at.desc');
+    params.set('limit', '100');
+    if (activeCat !== 'all') params.set('category', 'eq.' + activeCat);
+    if (activeCountry) params.set('country', 'eq.' + activeCountry);
+    if (searchTerm) params.set('title', 'ilike.*' + searchTerm + '*');
 
-  if (activeCat !== 'all') q = q.eq('category', activeCat);
-  if (activeCountry) q = q.eq('country', activeCountry);
-  if (searchTerm) q = q.ilike('title', '%' + searchTerm + '%');
+    var url = SURL + '/rest/v1/listings?' + params.toString();
+    var res = await fetch(url, {
+      headers: {
+        'apikey': SKEY,
+        'Authorization': 'Bearer ' + SKEY,
+        'Content-Type': 'application/json'
+      }
+    });
 
-  var res = await q;
-  if (res.error) {
-    document.getElementById('listings-wrap').innerHTML = '<div class="state-box"><h3>Грешка при зареждане</h3><p style="font-family:Verdana;font-size:13px;color:#e74c3c;">' + res.error.message + '</p></div>';
-    return;
+    if (!res.ok) {
+      var err = await res.text();
+      document.getElementById('listings-wrap').innerHTML = '<div class="state-box"><h3>Грешка</h3><p style="font-family:Verdana;font-size:12px;color:#e74c3c;">' + esc(err) + '</p></div>';
+      return;
+    }
+
+    listings = await res.json();
+    document.getElementById('listings-count').textContent = listings.length + ' обяви';
+    document.getElementById('stat-total').textContent = listings.length + '+';
+    renderListings();
+    updateCatCounts();
+  } catch(e) {
+    document.getElementById('listings-wrap').innerHTML = '<div class="state-box"><h3>Грешка при зареждане</h3><p style="font-family:Verdana;font-size:12px;color:#e74c3c;">' + esc(e.message) + '</p></div>';
   }
-  listings = res.data || [];
-
-  document.getElementById('listings-count').textContent = listings.length + ' обяви';
-  document.getElementById('stat-total').textContent = listings.length + '+';
-
-  renderListings();
-  updateCatCounts();
 }
 
 function renderListings() {
